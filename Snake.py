@@ -1,6 +1,5 @@
 import random
 import pygame, sys
-import torch
 
 
 
@@ -34,7 +33,6 @@ surface = pygame.Surface((SIZE, SIZE))
 surface.fill(color=GREY)
 apple = pygame.Surface((SIZE, SIZE))
 apple.fill(color=RED)
-
 
 def drawGrid():
     blockSize = 50
@@ -76,9 +74,9 @@ def Eat_Food(score, x, y):
     body.append((x, y)) 
     return Place_Food(), reward
 
-if isApple == False:
-        fruit_position = Place_Food()
-        isApple = True
+
+fruit_position = Place_Food()
+        
 
 body = [[x_pos, y_pos]]
 while True:

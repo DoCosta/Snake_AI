@@ -4,11 +4,12 @@ import pygame, sys
 
 
 # Game Settings
-WIDTH = 1000
-HEIGHT = 1000
+is_running = True
+WIDTH = 600   # WIDHT / HEIGHT should be proportional to SIZE
+HEIGHT = 600
 FPS = 10
-SPEED = 50
-SIZE = 50
+SIZE = 30
+SPEED = SIZE
 reward = 0 # Reward system for KI
 # Colors
 WHITE = (255, 255, 255)
@@ -19,8 +20,8 @@ GREY = (128,128,128)
 
 
 # Vars
-x_pos = 200
-y_pos = 250
+x_pos = 0
+y_pos = 0
 score = 0
 isApple = False
 direction = 3
@@ -35,20 +36,20 @@ apple = pygame.Surface((SIZE, SIZE))
 apple.fill(color=RED)
 
 def drawGrid():
-    blockSize = 50
+    blockSize = SIZE
     for x in range(0, WIDTH, blockSize):
         for y in range(0, HEIGHT, blockSize):
             rect = pygame.Rect(x, y, blockSize, blockSize)
             pygame.draw.rect(screen, BLACK, rect, 1)
 
 
-def isBorder():
-    if (y_pos == (WIDTH)) or (y_pos == 0- 50):
+def isBorder(x_pos, y_pos):
+    if (y_pos >= (HEIGHT)) or (y_pos <= 0 - SIZE):
         return True
-    if (x_pos == (HEIGHT)) or (x_pos == 0-50):
+    if (x_pos >= (WIDTH)) or (x_pos <= 0 - SIZE):
         return True
     else:
-        False
+        return False
 
 
 def Move(direction, x_pos, y_pos):
@@ -64,28 +65,53 @@ def Move(direction, x_pos, y_pos):
 
     return x_pos, y_pos
 
-def Place_Food():
-    fruit_position = [random.randrange(0, (HEIGHT - 50), 50),
-                  random.randrange(0, (WIDTH - 50), 50)]
-    return fruit_position
+def Place_Food(body):
+        fruit_position = [random.randrange(0, (WIDTH - SIZE), SIZE),
+                    random.randrange(0, (HEIGHT - SIZE), SIZE)]
+        if fruit_position in body:
+            Place_Food(body)
+        else:
+            return fruit_position
 
-def Eat_Food(score, x, y):
+def Eat_Food(body, x, y):
     reward = +10
     body.append((x, y)) 
-    return Place_Food(), reward
+    return Place_Food(body), reward
 
+def QuitGame():
+    pygame.quit()
+    sys.exit()
 
-fruit_position = Place_Food()
-        
+def GameOver():
+    is_Screen = True
+    font = pygame.font.SysFont('arial', 30)
+    text = font.render('Game Over', True, BLACK)
+    screen.fill(GREY)
+    screen.blit(text, [WIDTH / 2 - 80, HEIGHT / 2 - 60])
+    text2 = font.render('X for Exit | R for Restart', True, BLACK)
+    screen.blit(text2, [WIDTH / 2 - 150, HEIGHT / 2 + 20])
+    pygame.display.update()
+    while is_Screen:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                QuitGame()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    is_Screen = False
+                    return True
+                
+                if event.key == pygame.K_x:
+                    QuitGame()
+                    
 
 body = [[x_pos, y_pos]]
-while True:
+fruit_position = Place_Food(body)
+while is_running:
     
     predirection = direction
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            QuitGame()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w and predirection != 1:
                 direction = 0
@@ -95,10 +121,17 @@ while True:
                 direction = 2
             if event.key == pygame.K_d and predirection != 2:
                 direction = 3
-    if isBorder():
+
+    if isBorder(x_pos,y_pos):
         reward =-10
-        pygame.quit()
-        sys.exit()
+        is_running = False
+        body.clear()
+        body.append([0, 0])
+        x_pos, y_pos = 0, 0
+        reward = 0
+        direction = 3
+        is_running = GameOver()
+        
 
     i = int(len(body)) -1
     while i >= 1:
@@ -111,13 +144,12 @@ while True:
     while f >= 0:
         if ((body[0] == body[f]) and (f != 0)):
             reward = -10
-            pygame.quit()
-            sys.exit()
+            QuitGame()
         f-=1
 
     x_pos, y_pos = Move(direction, x_pos, y_pos)
     if fruit_position == [x_pos, y_pos]:
-        fruit_position, reward = Eat_Food(score,x_pos, y_pos)
+        fruit_position, reward = Eat_Food(body,x_pos, y_pos)
 
     screen.fill((175,215,70))   
     screen.blit(apple,fruit_position)
@@ -125,5 +157,4 @@ while True:
     for pos in body:
         screen.blit(surface,(pos))
     pygame.display.update()
-    print(reward)
     clock.tick(FPS)
